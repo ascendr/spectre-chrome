@@ -1,6 +1,6 @@
-# spectre
+# Minimal Spectre PoCs
 
-## Minimal PoC for Spectre in C
+## C version
 
 ```
 $ gcc spectre.c -o spectre
