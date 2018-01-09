@@ -1,3 +1,5 @@
+function worker_function(){
+
 self.onmessage = function(event)
 {
     const sharedBuffer = event.data;
@@ -8,3 +10,7 @@ self.onmessage = function(event)
         Atomics.add(sharedArray,0,1);
     }
 };
+}
+
+if(window!=self)
+  worker_function();

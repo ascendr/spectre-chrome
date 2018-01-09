@@ -61,9 +61,10 @@ function check(data_array)
 {
     function now() { return Atomics.load(sharedArray, 0) }
     function reset() { Atomics.store(sharedArray, 0, 0) }
-    function start() { reset(); return now() }
-    function clflush(size, current, offset=64)
+    function start() { reset(); return now(); }
+    function clflush(size, current)
     {
+         var offset = 64;
         for (var i = 0; i < ((size) / offset); i++)
         {
             current = evictionView.getUint32(i * offset);
@@ -71,7 +72,8 @@ function check(data_array)
     }
 
     // start thread counter
-    const worker = new Worker('timer.js');
+//    const worker = new Worker('timer.js');
+    const worker = new Worker(URL.createObjectURL(new Blob(["(" + worker_function.toString() + ")()"], {type: 'text/javascript'})));
     const sharedBuffer = new SharedArrayBuffer(Uint32Array.BYTES_PER_ELEMENT);
     const sharedArray = new Uint32Array(sharedBuffer);
     worker.postMessage(sharedBuffer);
@@ -172,6 +174,7 @@ const CACHE_SIZE = 12;
 
 function main()
 {
+    console.log("main::start");
     if(window.SharedArrayBuffer)
     {
         log("eviction buffer sz: " + CACHE_SIZE + "MB");
